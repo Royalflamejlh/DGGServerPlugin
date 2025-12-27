@@ -7,9 +7,10 @@ public final class DGGServerPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("PEPE WINS LOADING DGGServerPlugin");
+        getLogger().info("PEPE WINS - Loading DGGServerPlugin");
+        saveDefaultConfig();
         getServer().getPluginManager().registerEvents(
-                new BedExplosionListener(), this
+                new BedExplosionListener(this), this
         );
         getLogger().info("DGGServerPlugin loaded");
     }
@@ -17,5 +18,6 @@ public final class DGGServerPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        getLogger().info("DGGServerPlugin unloaded");
     }
 }
