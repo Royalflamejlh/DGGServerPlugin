@@ -4,3 +4,18 @@ main: pepe.wins.DGGServerPlugin.DGGServerPlugin
 api-version: '1.21'
 authors: [ Rooyal ]
 description: dggL
+commands:
+  dgg:
+    description: DGG root command
+    usage: /dgg <subcommand>
+permissions:
+  dgg.command.tp:
+    default: op
+  dgg.command.kill:
+    default: op
+  dgg.team.pepe:
+    description: Pepe team membership
+    default: false
+  dgg.team.yee:
+    description: Yee team membership
+    default: false
