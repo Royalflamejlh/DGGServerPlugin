@@ -1,0 +1,6 @@
+name: DGGServerPlugin
+version: '1.0-SNAPSHOT'
+main: pepe.wins.DGGServerPlugin.DGGServerPlugin
+api-version: '1.21'
+authors: [ Rooyal ]
+description: dggL
