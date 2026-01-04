@@ -1,5 +1,6 @@
 package pepe.wins.DGGServerPlugin.commands.subcommands;
 
+import org.bukkit.Sound;
 import pepe.wins.DGGServerPlugin.DggPlayer;
 import pepe.wins.DGGServerPlugin.DggPlayerManager;
 import pepe.wins.DGGServerPlugin.DggTeam;
@@ -59,14 +60,13 @@ public final class TpSubcommand implements Subcommand {
             if (dp.getTeam() != team) continue;
 
             if (!back) {
-                // remember where they were, then teleport to caller
-                dggPlayerManager.rememberLastLocation(p);
-                p.teleport(caller.getLocation());
+                dp.pushLocation(p.getLocation());
+                p.teleportAsync(caller.getLocation());
                 affected++;
             } else {
-                Location from = dggPlayerManager.popLastLocation(p);
+                Location from = dp.popLocation();
                 if (from != null) {
-                    p.teleport(from);
+                    p.teleportAsync(from);
                     affected++;
                 }
             }
