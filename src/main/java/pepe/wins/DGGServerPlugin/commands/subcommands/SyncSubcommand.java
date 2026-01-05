@@ -72,7 +72,7 @@ public final class SyncSubcommand implements Subcommand {
             return true;
         }
 
-        int reqNum = (int) (Math.random() * 1000);
+        int reqNum = (int) (Math.random() * 10000);
         long expiresAt = System.currentTimeMillis() + TTL_MS;
 
         pending.put(caller.getUniqueId(), new PendingSync(reqName, reqNum, expiresAt));

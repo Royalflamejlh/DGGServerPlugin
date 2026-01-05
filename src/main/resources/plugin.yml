@@ -1,5 +1,5 @@
 name: DGGServerPlugin
-version: '1.0.1'
+version: '1.0.2'
 main: pepe.wins.DGGServerPlugin.DGGServerPlugin
 api-version: '1.21'
 authors: [ Rooyal ]
@@ -19,3 +19,6 @@ permissions:
   dgg.team.yee:
     description: Yee team membership
     default: false
+  dgg.command.sync:
+    description: Sync mc account with dgg account
+    default: true

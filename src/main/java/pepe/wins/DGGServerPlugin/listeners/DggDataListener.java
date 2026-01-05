@@ -18,10 +18,11 @@ public class DggDataListener implements DGGChatListener {
         if (msg == null) return;
         DggPlayer dp = playerManager.get(msg.id);
         if(dp == null) return;
-        dp.setNick(msg.nick);
-        dp.setFeatures(msg.features);
-        dp.setSubscription(msg.subscription.tier);
-        dp.setRoles(msg.roles);
+        // todo sync id info
+//        dp.setNick(msg.nick);
+//        dp.setFeatures(msg.features);
+//        dp.setSubscription(msg.subscription.tier);
+//        dp.setRoles(msg.roles);
 
     }
 }

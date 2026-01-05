@@ -35,16 +35,12 @@ public final class DGGServerPlugin extends JavaPlugin {
             getLogger().severe("LuckPerms not found! Please make sure it exists!");
         }
 
-
-
-
-
         saveDefaultConfig();
 
         List<Subcommand> subs = List.of(
                 new TpSubcommand(dggPlayerManager),
                 new KillSubcommand(dggPlayerManager),
-                new SyncSubcommand(chatBus)
+                new SyncSubcommand(chatBus, dggPlayerManager)
         );
 
         DggCommand dgg = new DggCommand(subs);
