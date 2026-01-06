@@ -16,9 +16,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
+    implementation("com.zaxxer:HikariCP:7.0.2")
     implementation("org.java-websocket:Java-WebSocket:1.6.0")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.7")
 }
 
 tasks {
@@ -55,8 +57,12 @@ processResources {
 
 tasks.shadowJar {
     archiveClassifier.set('')
+    mergeServiceFiles()
     relocate("org.java_websocket", "pepe.wins.shadow.org.java_websocket")
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
+
+
 
 tasks.build {
     dependsOn tasks.shadowJar

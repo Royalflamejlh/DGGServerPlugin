@@ -53,11 +53,9 @@ public final class TpSubcommand implements Subcommand {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.getUniqueId().equals(caller.getUniqueId())) continue;
 
-            // refresh from permissions so it stays correct
-            dggPlayerManager.refresh(p);
-            DggPlayer dp = dggPlayerManager.getOrCreate(p);
+            DggPlayer dp = dggPlayerManager.getCached(p);
 
-            if (dp.getTeam() != team) continue;
+            if (dp.features().contains("pepe")) continue; //TODO make this correct / tp based off thing in profile
 
             if (!back) {
                 dp.pushLocation(p.getLocation());

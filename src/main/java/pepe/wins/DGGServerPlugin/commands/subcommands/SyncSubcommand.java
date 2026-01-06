@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import pepe.wins.DGGServerPlugin.DggPlayer;
 import pepe.wins.DGGServerPlugin.DggPlayerManager;
 import pepe.wins.DGGServerPlugin.lib.chat.DGGChatBus;
 import pepe.wins.DGGServerPlugin.lib.chat.DGGChatListener;
@@ -104,11 +105,11 @@ public final class SyncSubcommand implements Subcommand {
         if (pending.isEmpty()) return;
 
         for (var entry : pending.entrySet()) {
-            UUID playerId = entry.getKey();
+            UUID uuid = entry.getKey();
             PendingSync ps = entry.getValue();
 
             if (ps.expiresAtMs <= now) {
-                pending.remove(playerId);
+                pending.remove(uuid);
                 continue;
             }
 
@@ -133,16 +134,23 @@ public final class SyncSubcommand implements Subcommand {
 
             if (typedCode != ps.code) continue;
 
-            pending.remove(playerId);
+            pending.remove(uuid);
 
-            playerManager.getOrCreate(playerId).setDggId(msg.id);
-
-            Player p = Bukkit.getPlayer(playerId);
+            Player p = Bukkit.getPlayer(uuid);
             if (p != null && p.isOnline()) {
                 p.sendMessage(Component.text("DGG sync verified for " + ps.requestedNick, NamedTextColor.GREEN));
             }
 
-            return;
+            playerManager.get(uuid)
+                    .thenAccept(dp -> {
+                        dp.setDggId(msg.id);
+                        playerManager.reindex(uuid);
+                        playerManager.save(uuid);
+                    })
+                    .exceptionally(ex -> {
+                        ex.printStackTrace();
+                        return null;
+                    });
         }
     }
 }

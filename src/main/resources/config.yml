@@ -1,1 +1,7 @@
 disable-bed-explode: false
+db:
+  address: ${CFG_DB_HOST}
+  port: ${CFG_DB_PORT}
+  name: ${CFG_DB_NAME}
+  user: ${CFG_DB_USERNAME}
+  pass: ${CFG_DB_PASS}

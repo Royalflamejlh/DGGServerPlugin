@@ -45,12 +45,11 @@ public final class KillSubcommand implements Subcommand {
 
         int affected = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
-            dggPlayerManager.refresh(p);
-            DggPlayer dp = dggPlayerManager.getOrCreate(p);
-            if (dp.getTeam() == team) {
-                p.setHealth(0.0);
-                affected++;
-            }
+            DggPlayer dp = dggPlayerManager.getCached(p);
+//            if (dp.getTeam() == team) {
+//                p.setHealth(0.0);
+//                affected++;
+//            }
         }
 
         caller.sendMessage(ChatColor.GREEN + "Killed " + affected + " " + team.id() + " player(s).");
