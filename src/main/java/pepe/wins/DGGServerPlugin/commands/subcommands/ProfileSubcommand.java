@@ -2,18 +2,12 @@ package pepe.wins.DGGServerPlugin.commands.subcommands;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import pepe.wins.DGGServerPlugin.DGGServerPlugin;
-import pepe.wins.DGGServerPlugin.DggPlayer;
 import pepe.wins.DGGServerPlugin.DggPlayerManager;
-import pepe.wins.DGGServerPlugin.lib.chat.DGGChatBus;
-import pepe.wins.DGGServerPlugin.lib.chat.DGGChatListener;
-import pepe.wins.DGGServerPlugin.lib.chat.DGGMessage;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class ProfileSubcommand implements Subcommand {
 

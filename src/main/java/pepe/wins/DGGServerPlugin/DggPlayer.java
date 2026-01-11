@@ -1,10 +1,8 @@
 package pepe.wins.DGGServerPlugin;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import pepe.wins.DGGServerPlugin.commands.subcommands.Subcommand;
+import pepe.wins.DGGServerPlugin.lib.chat.DGGMessage;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,10 +17,10 @@ public final class DggPlayer {
     private long dggId;
     private List<String> roles;
     private List<String> features;
-    private int subscription;
+    private int tier;
+    private boolean dggChatFlag = false;
 
     // ------------------- unstored profile stuff
-    private boolean dggChatFlag = false;
     private boolean dggDebugFlag = false;
     private BlockingDeque<Location> locationStack = new LinkedBlockingDeque<>();
 
@@ -63,7 +61,7 @@ public final class DggPlayer {
     }
 
     public int subscription() {
-        return subscription;
+        return tier;
     }
 
     public void setNick(String nick) {
@@ -78,9 +76,14 @@ public final class DggPlayer {
         this.features = features;
     }
 
-    public void setSubscription(int subscription) {
-        this.subscription = subscription;
+    public void setSubscription(DGGMessage.Subscription subscription) {
+        int tier = 0;
+        if(subscription != null) tier = subscription.tier;
+        this.tier = tier;
     }
+
+    public void setTier(int tier){this.tier = tier;}
+
 
     public boolean isDggChatFlag() {
         return dggChatFlag;
@@ -90,11 +93,11 @@ public final class DggPlayer {
         return dggChatFlag;
     }
 
-    public void setDGGChat(boolean b) {
+    public void setDGGChatFlag(boolean b) {
         dggChatFlag = b;
     }
 
-    public void setDGGDebug(boolean b) {
+    public void setDGGDebugFlag(boolean b) {
         dggDebugFlag = b;
     }
 }

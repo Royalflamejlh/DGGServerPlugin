@@ -5,7 +5,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import pepe.wins.DGGServerPlugin.DggPlayer;
 import pepe.wins.DGGServerPlugin.DggPlayerManager;
 import pepe.wins.DGGServerPlugin.lib.chat.DGGChatBus;
 import pepe.wins.DGGServerPlugin.lib.chat.DGGChatListener;

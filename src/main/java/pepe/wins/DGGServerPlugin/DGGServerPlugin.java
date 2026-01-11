@@ -12,6 +12,7 @@ import pepe.wins.DGGServerPlugin.lib.chat.DGGChatBus;
 import pepe.wins.DGGServerPlugin.lib.db.Database;
 import pepe.wins.DGGServerPlugin.listeners.BedExplosionListener;
 import pepe.wins.DGGServerPlugin.listeners.DggDataListener;
+import pepe.wins.DGGServerPlugin.listeners.IngameChatListener;
 import pepe.wins.DGGServerPlugin.listeners.PlayerListener;
 
 import java.util.List;
@@ -26,9 +27,12 @@ public final class DGGServerPlugin extends JavaPlugin {
 
     private Database db;
 
+    private DggNametag nametag;
+
     @Override
     public void onEnable() {
         getLogger().info("PEPE WINS - Loading DGGServerPlugin");
+        saveDefaultConfig();
 
         db = new Database(this);
         chatBus = new DGGChatBus(this);
@@ -41,8 +45,6 @@ public final class DGGServerPlugin extends JavaPlugin {
             getLogger().severe("LuckPerms not found! Please make sure it exists!");
         }
 
-        saveDefaultConfig();
-
         List<Subcommand> subs = List.of(
                 new TpSubcommand(dggPlayerManager),
                 new KillSubcommand(dggPlayerManager),
@@ -50,9 +52,7 @@ public final class DGGServerPlugin extends JavaPlugin {
                 new ProfileSubcommand(this),
                 new ChatSubcommand(this)
         );
-
         DggCommand dgg = new DggCommand(subs);
-
         PluginCommand cmd = getCommand("dgg");
         if (cmd == null) {
             getLogger().severe("Command 'dgg' not found in plugin.yml!");
@@ -63,9 +63,14 @@ public final class DGGServerPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new BedExplosionListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        getServer().getPluginManager().registerEvents(new IngameChatListener(this), this);
+
+        chatBus.addListener(new DggDataListener(this));
 
         dggChat = new DGGChat("wss://chat.destiny.gg/ws", "https://www.destiny.gg", null, chatBus);
         dggChat.connect();
+
+        nametag = new DggNametag();
 
         getLogger().info("DGGServerPlugin loaded");
     }
@@ -82,7 +87,7 @@ public final class DGGServerPlugin extends JavaPlugin {
         }
 
         if (db != null) {
-            db.close(); // make this call hikari.close()
+            db.close();
         }
 
         getLogger().info("DGGServerPlugin unloaded");
@@ -96,4 +101,6 @@ public final class DGGServerPlugin extends JavaPlugin {
     public DggPlayerManager getPlayerManager() {
         return dggPlayerManager;
     }
+
+    public DggNametag nametag() { return nametag; }
 }

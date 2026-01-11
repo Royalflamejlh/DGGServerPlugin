@@ -40,7 +40,7 @@ public final class DebugSubcommand implements Subcommand {
         String req = args[0].trim().toLowerCase();
         if(req.equalsIgnoreCase("enable")){
             DggPlayer dp = playerManager.getCached(caller.getUniqueId());
-            if(dp != null) dp.setDGGDebug(true);
+            if(dp != null) dp.setDGGDebugFlag(true);
             else {
                 caller.sendMessage(Component.text("Error enabling debug!" , NamedTextColor.RED));
             }
@@ -48,7 +48,7 @@ public final class DebugSubcommand implements Subcommand {
         }
         else if(req.equalsIgnoreCase("disable")){
             DggPlayer dp = playerManager.getCached(caller.getUniqueId());
-            if(dp != null) dp.setDGGDebug(false);
+            if(dp != null) dp.setDGGDebugFlag(false);
             else {
                 caller.sendMessage(Component.text("Error disabling debug!" , NamedTextColor.RED));
             }

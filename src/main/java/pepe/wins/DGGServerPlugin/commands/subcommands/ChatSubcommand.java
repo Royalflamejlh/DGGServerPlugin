@@ -43,7 +43,7 @@ public final class ChatSubcommand implements Subcommand {
         String req = args[0].trim().toLowerCase();
         if(req.equalsIgnoreCase("enable")){
             DggPlayer dp = playerManager.getCached(caller.getUniqueId());
-            if(dp != null) dp.setDGGChat(true);
+            if(dp != null) dp.setDGGChatFlag(true);
             else {
                 caller.sendMessage(Component.text("Error enabling chat!" , NamedTextColor.RED));
             }
@@ -51,7 +51,7 @@ public final class ChatSubcommand implements Subcommand {
         }
         else if(req.equalsIgnoreCase("disable")){
             DggPlayer dp = playerManager.getCached(caller.getUniqueId());
-            if(dp != null) dp.setDGGChat(false);
+            if(dp != null) dp.setDGGChatFlag(false);
             else {
                 caller.sendMessage(Component.text("Error disabling chat!" , NamedTextColor.RED));
             }

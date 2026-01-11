@@ -40,10 +40,7 @@ public final class Database {
         try {
             Class.forName("org.mariadb.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(
-                    "MariaDB JDBC driver not found.",
-                    e
-            );
+            throw new IllegalStateException("MariaDB JDBC driver not found.", e);
         }
 
         log.info("[db] Initializing MariaDB pool for " + address + ":" + port + "/" + database);
@@ -56,7 +53,6 @@ public final class Database {
         hc.setLeakDetectionThreshold(0);
 
         hc.setJdbcUrl("jdbc:mariadb://" + address + ":" + port + "/" + database);
-
         hc.setUsername(username);
         hc.setPassword(password);
         hc.addDataSourceProperty("useUnicode", "true");
@@ -78,8 +74,6 @@ public final class Database {
     }
 
     /**
-     * Stores DGG player identity + metadata
-     *
      * Columns:
      * - uuid (PK)
      * - dgg_id
@@ -87,10 +81,11 @@ public final class Database {
      * - roles_json
      * - features_json
      * - subscription
+     * - dgg_chat_flag
      * - updated_at
      */
     public void createPlayersTable() {
-        final String sql =
+        final String create =
                 "CREATE TABLE IF NOT EXISTS Players (" +
                         "  uuid VARCHAR(36) NOT NULL," +
                         "  dgg_id BIGINT NULL," +
@@ -98,19 +93,33 @@ public final class Database {
                         "  roles_json TEXT NULL," +
                         "  features_json TEXT NULL," +
                         "  subscription INT NULL," +
+                        "  dgg_chat_flag TINYINT(1) NOT NULL DEFAULT 0," +
                         "  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
                         "  PRIMARY KEY (uuid)" +
                         ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
-        try (Connection connection = hikari.getConnection();
-             Statement statement = connection.createStatement()) {
+        try (Connection c = hikari.getConnection();
+             Statement s = c.createStatement()) {
+            s.execute(create);
+            // ---- migrations (safe to run every startup) ----
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS dgg_id BIGINT NULL");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS nick VARCHAR(64) NULL");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS roles_json TEXT NULL");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS features_json TEXT NULL");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS subscription INT NULL");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS dgg_chat_flag TINYINT(1) NOT NULL DEFAULT 0");
+            s.executeUpdate("ALTER TABLE Players ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
-            log.fine("Executing SQL: " + sql);
-            statement.execute(sql);
+            try {
+                s.executeUpdate("ALTER TABLE Players ADD UNIQUE INDEX IF NOT EXISTS uq_players_dgg_id (dgg_id)");
+            } catch (SQLException ignored) {
+            }
+
         } catch (SQLException e) {
-            log.warning("[db] Could not create/find Players table: " + e.getMessage());
+            log.warning("[db] Could not create/migrate Players table: " + e.getMessage());
         }
     }
+
 
     public void savePlayer(DggPlayer player) {
         if (player == null) return;
@@ -119,14 +128,15 @@ public final class Database {
         if (uuid == null) return;
 
         final String upsert =
-                "INSERT INTO Players (uuid, dgg_id, nick, roles_json, features_json, subscription) " +
+                "INSERT INTO Players (uuid, dgg_id, nick, roles_json, features_json, subscription, dgg_chat_flag) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?) " +
                         "ON DUPLICATE KEY UPDATE " +
                         "dgg_id=VALUES(dgg_id), " +
                         "nick=VALUES(nick), " +
                         "roles_json=VALUES(roles_json), " +
                         "features_json=VALUES(features_json), " +
-                        "subscription=VALUES(subscription);";
+                        "subscription=VALUES(subscription), " +
+                        "dgg_chat_flag=VALUES(dgg_chat_flag);";
 
         try (Connection connection = hikari.getConnection();
              PreparedStatement p = connection.prepareStatement(upsert)) {
@@ -140,14 +150,63 @@ public final class Database {
             p.setString(3, nullIfBlank(player.nick()));
             p.setString(4, toJsonArray(player.roles()));
             p.setString(5, toJsonArray(player.features()));
-            p.setInt(6, player.subscription());
 
-            log.fine("Executing SQL: " + p);
+            int sub = player.subscription();
+            if (sub < 0) p.setNull(6, Types.INTEGER);
+            else p.setInt(6, sub);
+
+            p.setBoolean(7, player.isDggChatFlag());
+
             p.executeUpdate();
 
         } catch (SQLException e) {
             log.warning("[db] savePlayer failed: " + e.getMessage());
         }
+    }
+
+    public DggPlayer loadPlayer(UUID uuid) {
+        if (uuid == null) return null;
+
+        final String sql =
+                "SELECT uuid, dgg_id, nick, roles_json, features_json, subscription, dgg_chat_flag " +
+                        "FROM Players WHERE uuid=? LIMIT 1;";
+
+        try (Connection connection = hikari.getConnection();
+             PreparedStatement p = connection.prepareStatement(sql)) {
+
+            p.setString(1, uuid.toString());
+
+            try (ResultSet rs = p.executeQuery()) {
+                if (!rs.next()) return null;
+
+                DggPlayer player = new DggPlayer(uuid);
+
+                long dggId = rs.getLong("dgg_id");
+                if (!rs.wasNull()) player.setDggId(dggId);
+
+                String nick = rs.getString("nick");
+                if (nick != null) player.setNick(nick);
+
+                player.setRoles(fromJsonArray(rs.getString("roles_json")));
+                player.setFeatures(fromJsonArray(rs.getString("features_json")));
+
+                int sub = rs.getInt("subscription");
+                if (rs.wasNull()) player.setTier(-1);
+                else player.setTier(sub);
+
+                player.setDGGChatFlag(rs.getBoolean("dgg_chat_flag"));
+
+                return player;
+            }
+
+        } catch (SQLException e) {
+            log.warning("[db] loadPlayer failed: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public void close() {
+        hikari.close();
     }
 
     private static String nullIfBlank(String s) {
@@ -185,11 +244,8 @@ public final class Database {
                 case '\r': sb.append("\\r"); break;
                 case '\t': sb.append("\\t"); break;
                 default:
-                    if (c < 0x20) {
-                        sb.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        sb.append(c);
-                    }
+                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+                    else sb.append(c);
             }
         }
         return sb.toString();
@@ -200,7 +256,6 @@ public final class Database {
         String s = json.trim();
         if (s.isEmpty() || s.equals("[]")) return List.of();
 
-        // Minimal decoder for ["a","b"] that matches your encoder (no nested/escaped quotes beyond \")
         List<String> out = new java.util.ArrayList<>();
         int i = 0;
         if (s.charAt(i) != '[') return List.of();
@@ -211,7 +266,7 @@ public final class Database {
             if (i < s.length() && s.charAt(i) == ']') break;
 
             if (i >= s.length() || s.charAt(i) != '"') break;
-            i++; // skip opening quote
+            i++;
 
             StringBuilder item = new StringBuilder();
             while (i < s.length()) {
@@ -249,50 +304,4 @@ public final class Database {
 
         return out;
     }
-
-    public DggPlayer loadPlayer(UUID uuid) {
-        if (uuid == null) return null;
-
-        final String sql =
-                "SELECT uuid, dgg_id, nick, roles_json, features_json, subscription " +
-                        "FROM Players WHERE uuid=? LIMIT 1;";
-
-        try (Connection connection = hikari.getConnection();
-             PreparedStatement p = connection.prepareStatement(sql)) {
-
-            p.setString(1, uuid.toString());
-            log.fine("Executing SQL: " + p);
-
-            try (ResultSet rs = p.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
-
-                DggPlayer player = new DggPlayer(uuid);
-
-                long dggId = rs.getLong("dgg_id");
-                if (!rs.wasNull()) {
-                    player.setDggId(dggId);
-                }
-
-                String nick = rs.getString("nick");
-                if (nick != null) player.setNick(nick);
-                player.setRoles(fromJsonArray(rs.getString("roles_json")));
-                player.setFeatures(fromJsonArray(rs.getString("features_json")));
-
-                int sub = rs.getInt("subscription");
-                player.setSubscription(sub);
-                return player;
-            }
-
-        } catch (SQLException e) {
-            log.warning("[db] loadPlayer failed: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public void close() {
-        hikari.close();
-    }
 }
-
